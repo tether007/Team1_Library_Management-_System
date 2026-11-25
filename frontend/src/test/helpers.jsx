@@ -1,14 +1,38 @@
 import { render } from '@testing-library/react'
 import { Provider } from 'react-redux'
-import { encodeBasicToken, saveSession } from '../api/authSession'
-import { MOCK_USERS } from '../api/mockAdapter'
+import { saveSession } from '../api/authSession'
 import { createStore } from '../app/store'
 
-// Creates a signed-in session for a demo role and returns the matching preloaded state.
+// Tests replace the whole API module with vi.mock('.../api/libraryApi') and set return values per test.
+
+export const apiError = (message) => Object.assign(new Error(message), { response: { data: { message } } })
+
+// A backend page response.
+export const pageOf = (content, extra = {}) => ({
+  content,
+  page: 0,
+  size: 10,
+  totalElements: content.length,
+  totalPages: 1,
+  ...extra,
+})
+
+export const book = (id, title, extra = {}) => ({
+  id,
+  title,
+  author: 'Some Author',
+  isbn: `isbn-${id}`,
+  available: true,
+  borrowedBy: null,
+  ...extra,
+})
+
+export const member = (id, name, role = 'STUDENT', borrowedCount = 0) => ({ id, name, role, borrowedCount })
+
+// Creates a signed-in session for a role and returns the matching preloaded state.
 export function signIn(role) {
-  const { username, password } = MOCK_USERS.find((u) => u.role === role)
-  const user = { username, role }
-  saveSession({ token: encodeBasicToken(username, password), user })
+  const user = { username: role.toLowerCase(), role }
+  saveSession({ token: 'dGVzdDp0ZXN0', user })
   return { auth: { user } }
 }
 

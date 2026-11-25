@@ -1,8 +1,11 @@
 import { screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import App from './App'
-import { renderWithStore } from './test/helpers'
+import { libraryApi } from './api/libraryApi'
+import { book, pageOf, renderWithStore } from './test/helpers'
+
+vi.mock('./api/libraryApi')
 
 describe('App', () => {
   it('shows the login page when signed out', () => {
@@ -11,6 +14,8 @@ describe('App', () => {
   })
 
   it('lands on the book list after signing in as a member, with no staff views', async () => {
+    libraryApi.login.mockResolvedValue({ username: 'member', role: 'MEMBER' })
+    libraryApi.getBooks.mockResolvedValue(pageOf([book(1, 'Clean Code')]))
     const user = userEvent.setup()
     renderWithStore(<App />)
 
@@ -24,6 +29,7 @@ describe('App', () => {
   })
 
   it('returns to the login page after signing out', async () => {
+    libraryApi.getBooks.mockResolvedValue(pageOf([]))
     const user = userEvent.setup()
     renderWithStore(<App />, 'ADMIN')
 

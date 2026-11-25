@@ -3,8 +3,6 @@ import { useDispatch } from 'react-redux'
 import Notice from '../notice/Notice'
 import { login } from './authActions'
 
-const showDemoHint = import.meta.env.VITE_USE_MOCK !== 'false'
-
 export default function LoginPage() {
   const dispatch = useDispatch()
   const [username, setUsername] = useState('')
@@ -38,11 +36,9 @@ export default function LoginPage() {
         <button type="submit">Sign in</button>
       </form>
 
-      {showDemoHint && (
-        <p className="hint">
-          Demo accounts: admin / admin123, librarian / librarian123, member / member123
-        </p>
-      )}
+      <p className="hint">
+        Demo accounts: admin / admin123, librarian / librarian123, member / member123
+      </p>
     </main>
   )
 }

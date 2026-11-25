@@ -1,20 +1,17 @@
 import { createSlice, isAnyOf } from '@reduxjs/toolkit'
 import { logout } from '../auth/authActions'
 import { issueBook, returnBook } from '../borrow/borrowActions'
+import { emptyPageState, toPageState } from '../pagination/pageState'
 import { fetchBooks } from './booksActions'
-
-const initialState = { items: [] }
 
 const booksSlice = createSlice({
   name: 'books',
-  initialState,
+  initialState: emptyPageState,
   reducers: {},
   extraReducers: (builder) => {
     builder
-      .addCase(fetchBooks.fulfilled, (state, action) => {
-        state.items = action.payload
-      })
-      .addCase(logout.fulfilled, () => initialState)
+      .addCase(fetchBooks.fulfilled, (state, action) => toPageState(action.payload))
+      .addCase(logout.fulfilled, () => emptyPageState)
       .addMatcher(isAnyOf(issueBook.fulfilled, returnBook.fulfilled), (state, action) => {
         const index = state.items.findIndex((b) => b.id === action.payload.id)
         if (index !== -1) state.items[index] = action.payload

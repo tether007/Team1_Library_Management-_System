@@ -1,23 +1,31 @@
 import { screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { describe, expect, it } from 'vitest'
-import { loadSession } from '../../api/authSession'
-import { createStoreAs, renderWithStore } from '../../test/helpers'
+import { describe, expect, it, vi } from 'vitest'
+import { encodeBasicToken, loadSession } from '../../api/authSession'
+import { libraryApi } from '../../api/libraryApi'
+import { apiError, createStoreAs, renderWithStore } from '../../test/helpers'
 import { login, logout } from './authActions'
 import LoginPage from './LoginPage'
 import { can } from './permissions'
 
+vi.mock('../../api/libraryApi')
+
 describe('auth actions', () => {
   it('signs in with valid credentials and keeps the session', async () => {
+    libraryApi.login.mockResolvedValue({ username: 'librarian', role: 'LIBRARIAN' })
     const store = createStoreAs()
+
     await store.dispatch(login({ username: 'librarian', password: 'librarian123' }))
 
+    expect(libraryApi.login).toHaveBeenCalledWith(encodeBasicToken('librarian', 'librarian123'))
     expect(store.getState().auth.user).toEqual({ username: 'librarian', role: 'LIBRARIAN' })
     expect(loadSession().user.role).toBe('LIBRARIAN')
   })
 
-  it('rejects a wrong password', async () => {
+  it('shows the backend message for wrong credentials', async () => {
+    libraryApi.login.mockRejectedValue(apiError('Invalid username or password.'))
     const store = createStoreAs()
+
     await store.dispatch(login({ username: 'admin', password: 'nope' }))
 
     expect(store.getState().auth.user).toBeNull()
@@ -46,6 +54,7 @@ describe('permissions', () => {
 
 describe('LoginPage', () => {
   it('shows the backend error for bad credentials', async () => {
+    libraryApi.login.mockRejectedValue(apiError('Invalid username or password.'))
     const user = userEvent.setup()
     renderWithStore(<LoginPage />)
 
