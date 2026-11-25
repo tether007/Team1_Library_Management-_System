@@ -41,7 +41,18 @@ body { margin: 0; }
 
 .navbar-top { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 12px; }
 .navbar-top h1 { margin: 0; }
-.session { display: flex; align-items: center; gap: 8px; }
+/* Two columns: [username] [Sign out button over the photo]. The photo fills the button's column,
+   so it is exactly as wide as the button and stays square. */
+.session { display: grid; grid-template-columns: auto auto; gap: 8px; align-items: center; }
+.session .avatar { grid-column: 2; width: 100%; height: auto; aspect-ratio: 1; }
+
+.avatar {
+  display: block;
+  border: var(--border);
+  box-shadow: 3px 3px 0 var(--black);
+  background: var(--white);
+  image-rendering: pixelated;
+}
 
 .login { max-width: 420px; margin: 64px auto 0; background: var(--white); border: var(--border); box-shadow: var(--shadow); padding: 16px; }
 .stack { display: flex; flex-direction: column; gap: 12px; }
