@@ -4,6 +4,9 @@ import { fetchBooks } from '../books/booksActions'
 import { fetchMembers } from '../members/membersActions'
 import { issueBook, returnBook } from './borrowActions'
 
+const ALL = 100
+const ALL_MEMBERS = { page: 0, size: ALL, sort: 'name,asc' }
+
 export default function BorrowPage() {
   const dispatch = useDispatch()
   const books = useSelector((state) => state.books.items)
@@ -11,9 +14,10 @@ export default function BorrowPage() {
   const [bookId, setBookId] = useState('')
   const [memberId, setMemberId] = useState('')
 
+  // The selectors and the issued list need every book and member, so ask for the largest page the API allows.
   useEffect(() => {
-    dispatch(fetchBooks(''))
-    dispatch(fetchMembers())
+    dispatch(fetchBooks({ page: 0, size: ALL, sort: 'title,asc' }))
+    dispatch(fetchMembers(ALL_MEMBERS))
   }, [dispatch])
 
   const available = books.filter((b) => b.available)
@@ -25,13 +29,13 @@ export default function BorrowPage() {
     const result = await dispatch(issueBook({ bookId: Number(bookId), memberId: Number(memberId) }))
     if (issueBook.fulfilled.match(result)) {
       setBookId('')
-      dispatch(fetchMembers())
+      dispatch(fetchMembers(ALL_MEMBERS))
     }
   }
 
   const handleReturn = async (id) => {
     await dispatch(returnBook(id))
-    dispatch(fetchMembers())
+    dispatch(fetchMembers(ALL_MEMBERS))
   }
 
   return (

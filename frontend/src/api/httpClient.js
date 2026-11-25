@@ -1,14 +1,10 @@
 import axios from 'axios'
 import { loadSession } from './authSession'
-import mockAdapter from './mockAdapter'
 
-// Mock backend is on by default. Set VITE_USE_MOCK=false to call the real Spring Boot API.
-const useMock = import.meta.env.VITE_USE_MOCK !== 'false'
-
+// In development, Vite proxies /api to the Spring Boot backend (see vite.config.js).
 export const http = axios.create({
   baseURL: import.meta.env.VITE_API_URL ?? '/api',
   headers: { 'Content-Type': 'application/json' },
-  ...(useMock && { adapter: mockAdapter }),
 })
 
 // Request middleware: attach HTTP Basic credentials of the signed-in user.

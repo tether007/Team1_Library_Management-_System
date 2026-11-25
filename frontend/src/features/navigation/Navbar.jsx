@@ -1,5 +1,6 @@
 import { useDispatch, useSelector } from 'react-redux'
 import { logout } from '../auth/authActions'
+import Avatar from '../profile/Avatar'
 import { setTab } from './navSlice'
 import { tabsFor } from './tabs'
 
@@ -17,6 +18,7 @@ export default function Navbar() {
         <div className="session">
           <span>{user.username} [{user.role}]</span>
           <button onClick={() => dispatch(logout())}>Sign out</button>
+          <Avatar username={user.username} />
         </div>
       </div>
       <nav>

@@ -22,6 +22,15 @@ describe('Navbar', () => {
     expect(screen.queryByRole('button', { name: 'Members' })).not.toBeInTheDocument()
   })
 
+  it.each(['ADMIN', 'LIBRARIAN', 'MEMBER'])('shows the profile photo below Sign out for %s', (role) => {
+    renderWithStore(<Navbar />, role)
+
+    const signOut = screen.getByRole('button', { name: 'Sign out' })
+    const photo = screen.getByRole('img', { name: `Profile photo of ${role.toLowerCase()}` })
+
+    expect(signOut.compareDocumentPosition(photo) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+  })
+
   it('switches tab and signs out', async () => {
     const user = userEvent.setup()
     const { store } = renderWithStore(<Navbar />, 'ADMIN')

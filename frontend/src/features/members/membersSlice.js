@@ -1,22 +1,16 @@
 import { createSlice } from '@reduxjs/toolkit'
 import { logout } from '../auth/authActions'
-import { createMember, fetchMembers } from './membersActions'
-
-const initialState = { items: [] }
+import { emptyPageState, toPageState } from '../pagination/pageState'
+import { fetchMembers } from './membersActions'
 
 const membersSlice = createSlice({
   name: 'members',
-  initialState,
+  initialState: emptyPageState,
   reducers: {},
   extraReducers: (builder) => {
     builder
-      .addCase(fetchMembers.fulfilled, (state, action) => {
-        state.items = action.payload
-      })
-      .addCase(createMember.fulfilled, (state, action) => {
-        state.items.push(action.payload)
-      })
-      .addCase(logout.fulfilled, () => initialState)
+      .addCase(fetchMembers.fulfilled, (state, action) => toPageState(action.payload))
+      .addCase(logout.fulfilled, () => emptyPageState)
   },
 })
 

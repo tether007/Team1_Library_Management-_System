@@ -5,11 +5,12 @@ import { defineConfig } from 'vitest/config'
 export default defineConfig({
   plugins: [react()],
   server: {
-    // Used when VITE_USE_MOCK=false: forwards /api calls to the Spring Boot backend.
+    // Forwards /api calls to the Spring Boot backend.
     proxy: { '/api': 'http://localhost:8080' },
   },
   test: {
     environment: 'jsdom',
     setupFiles: './src/test/setup.js',
+    mockReset: true,
   },
 })

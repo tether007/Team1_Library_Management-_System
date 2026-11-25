@@ -1,29 +1,49 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { can } from '../auth/permissions'
+import Pager from '../pagination/Pager'
+import { PAGE_SIZE, sortParam, toggleSort } from '../pagination/pageState'
+import SortHeader from '../pagination/SortHeader'
 import { createBook, fetchBooks } from './booksActions'
 
 const EMPTY_FORM = { title: '', author: '', isbn: '' }
 
 export default function BooksPage() {
   const dispatch = useDispatch()
-  const books = useSelector((state) => state.books.items)
+  const { items: books, pageInfo } = useSelector((state) => state.books)
   const role = useSelector((state) => state.auth.user.role)
   const [query, setQuery] = useState('')
+  const [page, setPage] = useState(0)
+  const [sort, setSort] = useState({ field: 'title', dir: 'asc' })
   const [form, setForm] = useState(EMPTY_FORM)
 
+  const load = useCallback(
+    () => dispatch(fetchBooks({ query, page, size: PAGE_SIZE, sort: sortParam(sort) })),
+    [dispatch, query, page, sort],
+  )
+
   useEffect(() => {
-    dispatch(fetchBooks(query))
-  }, [dispatch, query])
+    load()
+  }, [load])
 
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value })
+
+  const handleQuery = (value) => {
+    setQuery(value)
+    setPage(0)
+  }
+
+  const handleSort = (field) => {
+    setSort((current) => toggleSort(current, field))
+    setPage(0)
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     const result = await dispatch(createBook(form))
     if (createBook.fulfilled.match(result)) {
       setForm(EMPTY_FORM)
-      dispatch(fetchBooks(query))
+      load()
     }
   }
 
@@ -45,12 +65,17 @@ export default function BooksPage() {
         placeholder="Search by title, author or ISBN"
         aria-label="Search books"
         value={query}
-        onChange={(e) => setQuery(e.target.value)}
+        onChange={(e) => handleQuery(e.target.value)}
       />
 
       <table>
         <thead>
-          <tr><th>Title</th><th>Author</th><th>ISBN</th><th>Status</th></tr>
+          <tr>
+            <SortHeader label="Title" field="title" sort={sort} onSort={handleSort} />
+            <SortHeader label="Author" field="author" sort={sort} onSort={handleSort} />
+            <SortHeader label="ISBN" field="isbn" sort={sort} onSort={handleSort} />
+            <th>Status</th>
+          </tr>
         </thead>
         <tbody>
           {books.map((book) => (
@@ -64,6 +89,8 @@ export default function BooksPage() {
           {books.length === 0 && <tr><td colSpan="4">No books found.</td></tr>}
         </tbody>
       </table>
+
+      <Pager pageInfo={pageInfo} onPage={setPage} />
     </section>
   )
 }

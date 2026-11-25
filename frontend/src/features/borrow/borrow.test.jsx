@@ -1,53 +1,49 @@
 import { screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { describe, expect, it } from 'vitest'
-import { createStoreAs, renderWithStore } from '../../test/helpers'
-import { createBook, fetchBooks } from '../books/booksActions'
+import { describe, expect, it, vi } from 'vitest'
+import { libraryApi } from '../../api/libraryApi'
+import { apiError, book, createStoreAs, member, pageOf, renderWithStore } from '../../test/helpers'
+import { fetchBooks } from '../books/booksActions'
 import { issueBook, returnBook } from './borrowActions'
 import BorrowPage from './BorrowPage'
 
+vi.mock('../../api/libraryApi')
+
 describe('borrow actions', () => {
-  it('issues then returns a book', async () => {
+  it('replaces the book in the list when it is issued and returned', async () => {
+    libraryApi.getBooks.mockResolvedValue(pageOf([book(1, 'Clean Code')]))
+    libraryApi.issueBook.mockResolvedValue(book(1, 'Clean Code', { available: false, borrowedBy: 1 }))
+    libraryApi.returnBook.mockResolvedValue(book(1, 'Clean Code'))
     const store = createStoreAs('LIBRARIAN')
-    await store.dispatch(fetchBooks(''))
+    await store.dispatch(fetchBooks({}))
 
     await store.dispatch(issueBook({ bookId: 1, memberId: 1 }))
-    expect(store.getState().books.items.find((b) => b.id === 1).available).toBe(false)
+    expect(libraryApi.issueBook).toHaveBeenCalledWith({ bookId: 1, memberId: 1 })
+    expect(store.getState().books.items[0].available).toBe(false)
+    expect(store.getState().notice.message).toEqual({ type: 'success', text: 'Book issued.' })
 
     await store.dispatch(returnBook(1))
-    expect(store.getState().books.items.find((b) => b.id === 1).available).toBe(true)
+    expect(store.getState().books.items[0].available).toBe(true)
   })
 
-  it('refuses to issue a book that is already issued', async () => {
+  it('shows the rule violation returned by the backend', async () => {
+    libraryApi.issueBook.mockRejectedValue(apiError('Asha Rao has reached the borrow limit of 3.'))
     const store = createStoreAs('LIBRARIAN')
-    await store.dispatch(issueBook({ bookId: 1, memberId: 1 }))
-    await store.dispatch(issueBook({ bookId: 1, memberId: 2 }))
-    expect(store.getState().notice.message.text).toBe('"Clean Code" is not available.')
-  })
 
-  it('refuses to return a book that is not issued', async () => {
-    const store = createStoreAs('LIBRARIAN')
-    await store.dispatch(returnBook(1))
-    expect(store.getState().notice.message.text).toBe('"Clean Code" was not issued.')
-  })
-
-  it('enforces the student borrow limit of 3', async () => {
-    const store = createStoreAs('ADMIN')
-    await store.dispatch(createBook({ title: 'Fourth', author: 'A', isbn: '1' }))
-    for (const bookId of [1, 2, 3]) await store.dispatch(issueBook({ bookId, memberId: 1 }))
     await store.dispatch(issueBook({ bookId: 4, memberId: 1 }))
-    expect(store.getState().notice.message.text).toBe('Asha Rao has reached the borrow limit of 3.')
-  })
 
-  it('forbids the member role from issuing', async () => {
-    const store = createStoreAs('MEMBER')
-    await store.dispatch(issueBook({ bookId: 1, memberId: 1 }))
-    expect(store.getState().notice.message.text).toBe('You do not have permission to do that.')
+    expect(store.getState().notice.message).toEqual({
+      type: 'error',
+      text: 'Asha Rao has reached the borrow limit of 3.',
+    })
   })
 })
 
 describe('BorrowPage', () => {
   it('issues a book to a member', async () => {
+    libraryApi.getBooks.mockResolvedValue(pageOf([book(1, 'Clean Code')]))
+    libraryApi.getMembers.mockResolvedValue(pageOf([member(1, 'Asha Rao')]))
+    libraryApi.issueBook.mockResolvedValue(book(1, 'Clean Code', { available: false, borrowedBy: 1 }))
     const user = userEvent.setup()
     renderWithStore(<BorrowPage />, 'LIBRARIAN')
 
@@ -59,5 +55,6 @@ describe('BorrowPage', () => {
     await user.click(screen.getByRole('button', { name: 'Issue book' }))
 
     expect(await screen.findByRole('button', { name: 'Return' })).toBeInTheDocument()
+    expect(libraryApi.getBooks).toHaveBeenCalledWith({ page: 0, size: 100, sort: 'title,asc' })
   })
 })
